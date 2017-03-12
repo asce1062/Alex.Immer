@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    android:fitsSystemWindows="true"
+    tools:context="alex.immer.MainActivity">
+
+    <alex.immer.MatrixEffect
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/art"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:scaleType="fitXY"
+        android:src="@drawable/picture_no_bg" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dip"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:src="@drawable/header_no_bg" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dip"
+            android:layout_marginLeft="71dp"
+            android:layout_marginStart="71dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/modnametext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chip Name"
+                android:textColor="#FAFAFA"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/numtrackstext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="N tracks"
+                android:textColor="#F5F5F5"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/ig"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="Alex.Immer"
+                android:textColor="#EEEEEE"
+                android:textSize="14sp"
+                android:textStyle="bold|italic"/>
+
+        </LinearLayout>
+    </RelativeLayout>
+
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+
+        <LinearLayout
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4.0dip"
+            android:layout_weight="0.0">
+
+            <SeekBar
+                android:id="@+id/tempo"
+                android:layout_below="@+id/numtrackstext"
+                android:max="100"
+                android:progress="50"
+                android:paddingLeft="16.0dip"
+                android:paddingRight="16.0dip"
+                android:focusable="true"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:maxHeight="4.0dip"
+                android:progressDrawable="@drawable/po_seekbar"
+                android:minHeight="4.0dip"
+                android:thumb="@drawable/seekbar_thumb"
+                android:layout_weight="1.0"/>
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/playpausebutton"
+                android:src="@drawable/ic_pause_"
+                android:background="@android:color/transparent"
+                android:focusable="true"
+                android:layout_width="68.0dip"
+                android:layout_height="68.0dip"
+                android:scaleType="fitXY"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_centerInParent="true"/>
+
+            <ImageButton
+                android:id="@+id/prevsongbutton"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_skip_previous"
+                android:focusable="true"
+                android:layout_width="42.0dip"
+                android:layout_height="42.0dip"
+                android:layout_marginRight="@dimen/default_margin"
+                android:scaleType="fitXY"
+                android:layout_toLeftOf="@id/playpausebutton"
+                android:layout_marginTop="13dp"/>
+
+            <ImageButton
+                android:id="@+id/nextsongbutton"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_skip_next"
+                android:focusable="true"
+                android:layout_width="42.0dip"
+                android:layout_height="42.0dip"
+                android:layout_marginLeft="@dimen/default_margin"
+                android:scaleType="fitXY"
+                android:layout_toRightOf="@id/playpausebutton"
+                android:layout_marginTop="13dp"/>
+        </RelativeLayout>
+    </LinearLayout>
+</RelativeLayout>

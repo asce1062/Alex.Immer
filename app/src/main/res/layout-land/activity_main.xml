@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    tools:context="alex.immer.MainActivity">
+
+    <alex.immer.MatrixEffect
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:id="@+id/art"
+        android:src="@drawable/picture_no_bg"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="50dp"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="30dp"
+        android:layout_marginStart="30dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Barbie Girl. (Remix)"
+        android:id="@+id/modnametext"
+        android:layout_marginLeft="125dp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:textSize="24dp"
+        android:layout_marginTop="100dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="42dp"
+        android:layout_marginEnd="42dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="24 channels 44100Hz"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="italic"
+        android:id="@+id/numtrackstext"
+        android:layout_marginTop="10dp"
+        android:layout_below="@+id/modnametext"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="72dp"
+        android:layout_marginEnd="72dp"/>
+
+    <SeekBar
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/tempo"
+        android:layout_below="@+id/numtrackstext"
+        android:layout_marginTop="15dp"
+        android:max="100"
+        android:progress="50" android:maxHeight="5dip"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="30dp"
+        android:layout_marginEnd="30dp"
+        android:indeterminate="false"
+        android:theme="@style/MySeekBarTheme"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/playpausebutton"
+        android:layout_below="@+id/tempo"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/ic_pause_"
+        android:background="@android:color/transparent"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="100dp"
+        android:layout_marginEnd="100dp"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/prevsongbutton"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_skip_previous"
+        android:layout_alignTop="@+id/playpausebutton"
+        android:layout_marginTop="23dp"
+        android:layout_alignRight="@+id/playpausebutton"
+        android:layout_marginRight="125dp"
+        android:layout_marginEnd="125dp"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/nextsongbutton"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_skip_next"
+        android:layout_alignTop="@+id/playpausebutton"
+        android:layout_marginTop="23dp"
+        android:layout_alignLeft="@+id/playpausebutton"
+        android:layout_marginLeft="125dp"
+        android:layout_marginStart="125dp"/>
+</RelativeLayout>

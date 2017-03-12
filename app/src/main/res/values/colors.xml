@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#0D4842</color>
+    <color name="colorPrimaryDark">#0C433D</color>
+    <color name="colorPrimaryLight">#0C534C</color>
+    <color name="colorAccent">#0D6259</color>
+    <color name="textColorPrimary">#FF7F7F</color>
+    <color name="textColorSecondary">#FFD452</color>
+    <color name="windowBackground">#000000</color>
+    <color name="colorIcons">#F0FF47</color>
+    <color name="colorDivider">#75ED3B</color>
+    <color name="navigationBarColor">#0D4842</color>
+    <!--<color name="colorPrimary">@android:color/transparent</color>
+    <color name="colorPrimaryDark">@android:color/transparent</color>
+    <color name="colorAccent">@android:color/transparent</color>-->
+    <color name="grey900transparent">#80212121</color>
+    <color name="grey50transparent">#dcfafafa</color>
+    <color name="grey400transparent">#80bdbdbd</color>
+    <color name="orange500transparent">#b4ff8800</color>
+</resources>

@@ -2,7 +2,6 @@ package alex.immer;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
@@ -236,13 +235,7 @@ public class MainActivity extends AppCompatActivity {
     //User Interface!
     private void SetupUserInterface() {
 
-        final Animation animTranslate = AnimationUtils.loadAnimation(this, R.anim.anim_translate);
-
         final Animation animAlpha = AnimationUtils.loadAnimation(this, R.anim.anim_alpha);
-
-        final Animation animScale = AnimationUtils.loadAnimation(this, R.anim.anim_scale);
-
-        final Animation animRotate = AnimationUtils.loadAnimation(this, R.anim.anim_rotate);
 
         //
         // get handles to the volume slider and text user interface

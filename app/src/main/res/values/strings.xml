@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Alex.Immer</string>
+    <string name="chip_name">Chip Name</string>
+    <string name="n_tracks">N Tracks</string>
+    <string name="alex_immer">Alex.Immer</string>
+    <string name="image_small">Header Image</string>
+    <string name="image_main">Album Art</string>
+    <string name="playpause_button">Play_Pause Button</string>
+    <string name="next_button">Next Button</string>
+    <string name="previous_button">Previous Button</string>
 </resources>

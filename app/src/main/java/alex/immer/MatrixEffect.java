@@ -19,7 +19,7 @@ public class MatrixEffect extends View {
     private int width, height;
     private Canvas canvas;
     private Bitmap canvasBmp;
-    private int fontSize = 14;
+    private int fontSize = 16;
     private int columnSize;
     private char[] cars = ("ぱぷぺぴぽぴゃぴゅぴょざずぜじぞじゃじゅじょらるれりろりゃりゅりょやよゆ" +
             "ぢゃぢゅェォゥィオァャュアウエイあいえおんばぶべびぼびゃびゅびょはふへひほひゃひゅひょ" +

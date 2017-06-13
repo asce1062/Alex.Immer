@@ -60,23 +60,32 @@ public class MainActivity extends AppCompatActivity {
     private int currmod;
 
     private final int[] MODlist = {
+            R.raw.leet,
             R.raw.abarenboshogun,
+            R.raw.amityville,
             R.raw.anticipation,
             R.raw.anticipationn,
             R.raw.backatitagain,
+            R.raw.blownfuse,
+            R.raw.bootcampriot,
             R.raw.botenanna,
+            R.raw.bubblebobble,
             R.raw.chaos,
             R.raw.chimai,
             R.raw.chimairemix,
             R.raw.coldburns,
             R.raw.contra,
+            R.raw.dance,
+            R.raw.delta,
             R.raw.descendantsofthesun,
+            R.raw.dissociation,
             R.raw.embrace,
             R.raw.eminemia,
             R.raw.escapeartist,
+            R.raw.eutuiubire,
             R.raw.excite,
             R.raw.fackdaheyter,
-            R.raw.fantacy,
+            R.raw.fantasy,
             R.raw.forjessica,
             R.raw.fourthwave,
             R.raw.ghosttown,
@@ -89,15 +98,20 @@ public class MainActivity extends AppCompatActivity {
             R.raw.intro,
             R.raw.itmighthavebeen,
             R.raw.itsalright,
+            R.raw.itslllove,
             R.raw.keepmoving,
             R.raw.laserbeams,
+            R.raw.lastninja,
             R.raw.lastone,
+            R.raw.life,
             R.raw.lightspeed,
             R.raw.lightspeed2,
             R.raw.lovedemo,
             R.raw.loveorig,
+            R.raw.mauve,
             R.raw.moveyourbody,
             R.raw.nothingelsematters,
+            R.raw.omicron,
             R.raw.oneforyou,
             R.raw.outro,
             R.raw.paradiserain,
@@ -112,11 +126,15 @@ public class MainActivity extends AppCompatActivity {
             R.raw.spacemelody,
             R.raw.strangerthings,
             R.raw.sunvsmooneclipsed,
+            R.raw.sysop,
             R.raw.thedaytheylanded,
+            R.raw.theeaglehaslanded,
             R.raw.thepeak,
             R.raw.thirdwave,
             R.raw.unknownsoldier,
+            R.raw.virtualdreams,
             R.raw.whenyesterdayistoday,
+            R.raw.withoutyou,
             R.raw.you
     };
     @Override
@@ -387,9 +405,8 @@ public class MainActivity extends AppCompatActivity {
         resplayer.PausePlay();
         // bump up to previous mod file
         currmod--;
-        //this is static. Current number of indexes is 58.
-        if (currmod <= MODlist.length-58) currmod = 0;
-        //if (currmod == MODlist.length) currmod = 0;
+        //this is static. Current number of indexes is 76.
+        if (currmod <= MODlist.length-76) currmod = 0;
 
         // load it into the player
         resplayer.LoadMODResource(MODlist[currmod]);

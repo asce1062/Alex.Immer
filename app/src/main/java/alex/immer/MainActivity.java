@@ -17,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.peculiargames.andmodplug.MODResourcePlayer;
 
 public class MainActivity extends AppCompatActivity {
     // tempo slider sets tempo instead of modifying it from -50 to +50
@@ -44,13 +43,13 @@ public class MainActivity extends AppCompatActivity {
     // UI
     private TextView modnameText;
     private TextView numtracksText;
-    private TextView ig;
+    TextView ig;
 
-    private ImageButton nextsongButton;
-    private ImageButton prevsongbutton;
+    ImageButton nextsongButton;
+    ImageButton prevsongbutton;
     private ImageButton playpauseButton;
     private ImageView art;
-    private ImageView imageView;
+    ImageView imageView;
 
     private SeekBar temposeekbar;
     private int tempo = 0;
@@ -190,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor prefs = getSharedPreferences(SHARED_PREFS_NAME, 0).edit();
         prefs.putInt(PREFS_SONGNUM, currmod);
         prefs.putInt(PREFS_SONGPATTERN, resplayer.getCurrentPattern());
-        prefs.commit();
+        prefs.apply();
 
         resplayer.StopAndClose();
         resplayer = null;
@@ -203,11 +202,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         final Animation animAlpha = AnimationUtils.loadAnimation(this, R.anim.anim_alpha);
-        final Animation animRotate = AnimationUtils.loadAnimation(this, R.anim.anim_rotate);
 
         if (resplayer == null) {
 
-            //
             // restore song number and current pattern so we can resume from there...
             mConfig = getSharedPreferences(SHARED_PREFS_NAME, 0);
             currmod = mConfig.getInt(PREFS_SONGNUM, 0);
@@ -237,7 +234,6 @@ public class MainActivity extends AppCompatActivity {
             resplayer.UnPausePlay();
         }
         art.startAnimation(animAlpha);
-        playpauseButton.startAnimation(animRotate);
         playpauseButton.setImageResource(R.drawable.ic_pause_);
 
         Log.v(LOGPREFIX, "onResume()");
@@ -247,16 +243,14 @@ public class MainActivity extends AppCompatActivity {
 
         final Animation animAlpha = AnimationUtils.loadAnimation(this, R.anim.anim_alpha);
 
-        //
         // get handles to the volume slider and text user interface
         // widgets
-        //
 
         temposeekbar = (SeekBar) findViewById(R.id.tempo);
         if (TEMPO_OVERRIDE)
-            temposeekbar.setProgress((int)(tempo));
+            temposeekbar.setProgress((tempo));
         else
-            temposeekbar.setProgress((int)(tempo+50));
+            temposeekbar.setProgress((tempo+50));
 
         // set up the tempo slider
         temposeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -291,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent();
                 intent.setAction(Intent.ACTION_VIEW);
                 intent.addCategory(Intent.CATEGORY_BROWSABLE);
-                intent.setData(Uri.parse("https://soundcloud.com/aleximmer"));
+                intent.setData(Uri.parse("https://asce1062.github.io/"));
                 startActivity(intent);
 
             }
@@ -365,9 +359,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
-    //
     // play the next MOD file in our list
-    //
     public void NextMOD() {
         resplayer.PausePlay();
 

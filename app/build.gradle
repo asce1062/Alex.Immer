@@ -1,30 +1,37 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '27.0.3'
+    namespace 'alex.immer'
+    compileSdkVersion 36
+    buildToolsVersion '36.0.0'
 
     defaultConfig {
         applicationId "alex.immer"
-        minSdkVersion 16
-        targetSdkVersion 22
+        minSdkVersion 31
+        targetSdkVersion 36
         versionCode 1
         versionName "1.0"
+        
         ndk {
             moduleName "libmodplug"
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
         }
+        
         sourceSets.main {
             jni.srcDirs = []
             jniLibs.srcDir "src/main/libs"
         }
-        signingConfigs {
-            release {
-                storeFile file("alex_immer.keystore")
-                storePassword "asce1062"
-                keyAlias "asce1062"
-                keyPassword "asce1062"
-                v2SigningEnabled true
-            }
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("alex_immer.keystore")
+            storePassword "asce1062"
+            keyAlias "asce1062"
+            keyPassword "asce1062"
+            v2SigningEnabled true
         }
     }
 
@@ -32,12 +39,179 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:appcompat-v7:23.4.0'
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.core:core:1.17.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+task generateJNIHeaders {
+    description = 'Generate JNI headers using javac -h'
+    group = 'build'
+
+    // List of Java files to generate headers for
+    def targetJavaFiles = [
+        'alex/immer/MODResourcePlayer.java',
+        'alex/immer/PlayerThread.java'
+    ]
+
+    doLast {
+        def outputDir = "${projectDir}/src/main/jni"
+        def tempDir = "${project.buildDir}/classes/jni-temp"
+
+        // Create directories
+        file(outputDir).mkdirs()
+        file(tempDir).mkdirs()
+
+        // Get classpath - try different configuration names for compatibility
+        def classpath = ""
+        try {
+            classpath = configurations.implementation.asPath
+        } catch (Exception e) {
+            try {
+                classpath = configurations.compile.asPath
+            } catch (Exception e2) {
+                classpath = "${android.bootClasspath.join(File.pathSeparator)}"
+            }
+        }
+
+        // Build list of target Java files
+        def javaFilesPaths = []
+        targetJavaFiles.each { relativeFilePath ->
+            def javaFile = file("src/main/java/${relativeFilePath}")
+            if (javaFile.exists()) {
+                javaFilesPaths.add(javaFile.absolutePath)
+                println "Including: ${relativeFilePath}"
+            } else {
+                println "Warning: File not found: ${relativeFilePath}"
+            }
+        }
+
+        if (javaFilesPaths.isEmpty()) {
+            println "No valid Java files found to process"
+            return
+        }
+
+        // Generate headers
+        def cmdArgs = ['javac', '-h', outputDir, '-d', tempDir, '-classpath', classpath] + javaFilesPaths
+
+        exec {
+            commandLine cmdArgs
+        }
+
+        println "JNI headers generated in: ${outputDir}"
+        println "Processed ${javaFilesPaths.size()} Java files"
+
+        // Clean up temporary class files
+        delete(tempDir)
+    }
+}
+
+task ndkClean {
+    description = 'Clean native libraries using ndk-build clean'
+    group = 'build'
+    
+    doLast {
+        def ndkDir = System.getenv('ANDROID_NDK') ?: System.getenv('NDK_ROOT') ?: '/Users/asce1062/Library/Android/NDK'
+        def ndkBuildPath = "${ndkDir}/ndk-build"
+        def workingDirectory = "${projectDir}/src/main"
+        
+        // Check if ndk-build exists
+        if (!file(ndkBuildPath).exists()) {
+            throw new GradleException("ndk-build not found at: ${ndkBuildPath}. Please set ANDROID_NDK environment variable or update the path.")
+        }
+        
+        // Check if Android.mk exists
+        if (!file("${workingDirectory}/jni/Android.mk").exists()) {
+            throw new GradleException("Android.mk not found at: ${workingDirectory}/jni/Android.mk")
+        }
+        
+        println "Running ndk-build clean from: ${workingDirectory}"
+        println "Using ndk-build at: ${ndkBuildPath}"
+        
+        exec {
+            workingDir = file(workingDirectory)
+            commandLine = [ndkBuildPath, 'clean']
+            
+            // Show ndk-build output
+            standardOutput = System.out
+            errorOutput = System.err
+        }
+        
+        println "NDK clean completed successfully"
+    }
+}
+
+task ndkBuild {
+    description = 'Build native libraries using ndk-build'
+    group = 'build'
+    dependsOn ndkClean
+
+    doLast {
+        def ndkDir = System.getenv('ANDROID_NDK') ?: System.getenv('NDK_ROOT') ?: '/Users/asce1062/Library/Android/NDK'
+        def ndkBuildPath = "${ndkDir}/ndk-build"
+        def workingDirectory = "${projectDir}/src/main"
+
+        // Check if ndk-build exists
+        if (!file(ndkBuildPath).exists()) {
+            throw new GradleException("ndk-build not found at: ${ndkBuildPath}. Please set ANDROID_NDK environment variable or update the path.")
+        }
+
+        // Check if Android.mk exists
+        if (!file("${workingDirectory}/jni/Android.mk").exists()) {
+            throw new GradleException("Android.mk not found at: ${workingDirectory}/jni/Android.mk")
+        }
+
+        println "Running ndk-build from: ${workingDirectory}"
+        println "Using ndk-build at: ${ndkBuildPath}"
+
+        exec {
+            workingDir = file(workingDirectory)
+            commandLine = [ndkBuildPath]
+
+            // Show ndk-build output for debugging
+            standardOutput = System.out
+            errorOutput = System.err
+        }
+
+        println "NDK build completed successfully"
+    }
+}
+
+// Set up task dependencies to run in order: generateJNIHeaders -> ndkClean -> ndkBuild
+ndkClean.dependsOn generateJNIHeaders
+
+// Hook into Android build process
+afterEvaluate {
+    // Run native build before assembling APK/AAB
+    tasks.matching { it.name.startsWith('assemble') }.all { 
+        it.dependsOn ndkBuild 
+    }
+    
+    // Run native build before generating bundles
+    tasks.matching { it.name.startsWith('bundle') }.all { 
+        it.dependsOn ndkBuild 
+    }
+    
+    // Run native build before pre-build tasks
+    tasks.matching { it.name.contains('preBuild') }.all { 
+        it.dependsOn ndkBuild 
+    }
 }

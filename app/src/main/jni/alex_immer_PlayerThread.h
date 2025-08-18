@@ -13,6 +13,8 @@ extern "C" {
 #define alex_immer_PlayerThread_NORM_PRIORITY 5L
 #undef alex_immer_PlayerThread_MAX_PRIORITY
 #define alex_immer_PlayerThread_MAX_PRIORITY 10L
+#undef alex_immer_PlayerThread_NO_INHERIT_THREAD_LOCALS
+#define alex_immer_PlayerThread_NO_INHERIT_THREAD_LOCALS 4L
 #undef alex_immer_PlayerThread_PATTERN_CHANGE_IMMEDIATE
 #define alex_immer_PlayerThread_PATTERN_CHANGE_IMMEDIATE 1L
 #undef alex_immer_PlayerThread_PATTERN_CHANGE_AFTER_CURRENT

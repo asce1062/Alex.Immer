@@ -1,6 +1,6 @@
 //
 // Quick-n-dirty JNI interface for using libmodplug in
-// Android (P.A. Casey  www.peculiar-games.com)
+// Android (asce1062  alexmbugua.me)
 //
 // go ahead and use it however you like, although
 // attribution is always appreciated!
@@ -78,9 +78,9 @@ struct _ModPlugFile
 //
 // ADD FOLLOWING JNI INTERFACE FUNCTIONS after the header files
 //
-// ************************************************************ 
+// ************************************************************
 // Start of JNI stub code
-// ************************************************************ 
+// ************************************************************
 ModPlugFile *currmodFile;
 
 #define SAMPLEBUFFERSIZE 40000
@@ -119,7 +119,7 @@ int ANDMODPLUGlogoutput;
 #define HAVE_LOADED_MOD()	(currmodFile != 0)
 
 /*
- * Class:     com_peculiar_1games_andmodplug_PlayerThread
+ * Class:     alex_immer_PlayerThread
  * Method:    ModPlug_Init
  * Signature: (I)Z
  */
@@ -605,7 +605,7 @@ JNIEXPORT jint JNICALL Java_alex_immer_PlayerThread_ModPlug_1GetNativeTempo
 }
 
 /*
- * Class:     com_peculiargames_modplayer_PlayerThread
+ * Class:     alex_immer_PlayerThread
  * Method:    ModPlug_ChangeTempo
  * Signature: (I)V
  */
@@ -618,7 +618,7 @@ JNIEXPORT void JNICALL Java_alex_immer_PlayerThread_ModPlug_1ChangeTempo
 }
 
 /*
- * Class:     com_peculiargames_modplayer_PlayerThread
+ * Class:     alex_immer_PlayerThread
  * Method:    ModPlug_SetTempo
  * Signature: (I)V
  */
@@ -807,6 +807,6 @@ JNIEXPORT void JNICALL Java_alex_immer_PlayerThread_ModPlug_1LogOutput
 
 
 
-// ************************************************************ 
+// ************************************************************
 // End of JNI stub code for libmodplug
-// ************************************************************ 
+// ************************************************************

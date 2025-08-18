@@ -1,9 +1,9 @@
 # basic makefile for building libmodplug with Android NDK
-#  
-# by PA Casey (crow from Peculiar Games)
+#
+# by asce1062
 # go ahead and use it however you like, although
-# attribution is always appreciated!  
-#  
+# attribution is always appreciated!
+#
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -19,7 +19,7 @@ LOCAL_CPP_INCLUDES := $(LOCAL_PATH)/libmodplug $(LOCAL_PATH)/..
 #
 LOCAL_CFLAGS := -DSMALLER_READS -DHAVE_SINF -DHAVE_SETENV \
 				-DMODPLUG_TRACKER -DPECULIAR_EXTENSIONS \
-				-DPECULIAR_FOURBYFOUR -Wno-deprecated-register \
+				-DPECULIAR_FOURBYFOUR -Wno-register \
 				-Wno-pointer-bool-conversion
 
 LOCAL_LDLIBS := -llog
@@ -29,7 +29,7 @@ LOCAL_MODULE    := modplug-1.0.6.2
 #
 # these are all the source files that come in the libmodplug
 # archive from sourceforge.net
-# EXCEPT jni_stubs.cpp which has the JNI interface code 
+# EXCEPT jni_stubs.cpp which has the JNI interface code
 # (basically just small stub functions that go on to call
 # the actual libmodplug methods)
 #
@@ -67,7 +67,7 @@ LOCAL_SRC_FILES := fastmix.cpp \
 		snd_fx.cpp \
 		sndfile.cpp \
 		sndmix.cpp \
-		jni_stubs.cpp 
+		jni_stubs.cpp
 
 
 include $(BUILD_SHARED_LIBRARY)

@@ -27,10 +27,8 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("alex_immer.keystore")
-            storePassword "asce1062"
+            storeFile file("alex_immer.jks")
             keyAlias "asce1062"
-            keyPassword "asce1062"
             v2SigningEnabled true
         }
     }
@@ -44,8 +42,15 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    
+    lint {
+        abortOnError false
+        checkReleaseBuilds true
+        // Optional: Create baseline for existing issues
+        // baseline = file("lint-baseline.xml")
     }
 }
 

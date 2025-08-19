@@ -1,0 +1,109 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme -->
+    <style name="Theme.AlexImmer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary colors (matching website light theme) -->
+        <item name="colorPrimary">@color/palette_800</item>        <!-- #947b82 -->
+        <item name="colorPrimaryVariant">@color/palette_700</item>  <!-- #120f19 -->
+        <item name="colorOnPrimary">@color/text_primary_dark</item> <!-- white -->
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/palette_300</item>       <!-- #dcb8b0 -->
+        <item name="colorSecondaryVariant">@color/palette_500</item> <!-- #9bb0cd -->
+        <item name="colorOnSecondary">@color/palette_700</item>     <!-- #120f19 -->
+        
+        <!-- Surface colors for WebView and app (light mode default) -->
+        <item name="colorSurface">@color/surface_light</item>        <!-- #ded9e3 -->
+        <item name="colorOnSurface">@color/on_surface_light</item>   <!-- #947b82 -->
+        
+        <!-- Background colors (light mode default) -->
+        <item name="android:colorBackground">@color/background_light</item> <!-- #e8e5f0 -->
+        <item name="colorOnBackground">@color/text_primary_light</item>     <!-- #947b82 -->
+        
+        <!-- Status and navigation bars for light mode (DayNight theme defaults to light) -->
+        <item name="android:statusBarColor">@color/status_bar_light</item>  <!-- #ded9e3 -->
+        <item name="android:navigationBarColor">@color/navigation_bar_light</item> <!-- #ded9e3 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- WebView specific -->
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:isLightTheme">true</item>
+        
+        <!-- Window background with topography pattern -->
+        <item name="android:windowBackground">@drawable/topography_background</item>
+        
+        <!-- Splash/Loading colors -->
+        <item name="colorSplashBackground">@color/background_light</item>
+        <item name="colorSplashText">@color/text_primary_light</item>
+    </style>
+
+    <!-- Light theme variant -->
+    <style name="Theme.AlexImmer.Light">
+        <!-- Primary colors remain same for consistency -->
+        <item name="colorPrimary">@color/palette_800</item>        <!-- #947b82 -->
+        <item name="colorPrimaryVariant">@color/palette_700</item>  <!-- #120f19 -->
+        <item name="colorOnPrimary">@color/text_primary_dark</item> <!-- white -->
+        
+        <!-- Surface colors for light theme -->
+        <item name="colorSurface">@color/surface_light</item>       <!-- #ded9e3 -->
+        <item name="colorOnSurface">@color/on_surface_light</item>  <!-- #947b82 -->
+        
+        <!-- Background colors for light theme -->
+        <item name="android:colorBackground">@color/background_light</item> <!-- #e8e5f0 -->
+        <item name="colorOnBackground">@color/text_primary_light</item>     <!-- #947b82 -->
+        
+        <!-- Status and navigation bars for light theme -->
+        <item name="android:statusBarColor">@color/status_bar_light</item>  <!-- #ded9e3 -->
+        <item name="android:navigationBarColor">@color/navigation_bar_light</item> <!-- #ded9e3 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- Light theme specific -->
+        <item name="android:isLightTheme">true</item>
+        <item name="android:windowBackground">@color/background_light</item>
+        
+        <!-- Splash/Loading colors for light theme -->
+        <item name="colorSplashBackground">@color/background_light</item>
+        <item name="colorSplashText">@color/text_primary_light</item>
+    </style>
+
+    <!-- Dark theme variant (explicit) -->
+    <style name="Theme.AlexImmer.Dark">
+        <!-- Inherits from base theme but explicit for clarity -->
+        <item name="colorPrimary">@color/palette_800</item>        <!-- #947b82 -->
+        <item name="colorPrimaryVariant">@color/palette_700</item>  <!-- #120f19 -->
+        <item name="colorOnPrimary">@color/text_primary_dark</item> <!-- white -->
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/palette_300</item>       <!-- #dcb8b0 -->
+        <item name="colorSecondaryVariant">@color/palette_500</item> <!-- #9bb0cd -->
+        <item name="colorOnSecondary">@color/palette_700</item>     <!-- #120f19 -->
+        
+        <!-- Dark theme surface colors -->
+        <item name="colorSurface">@color/surface_dark</item>        <!-- #201d29 -->
+        <item name="colorOnSurface">@color/on_surface_dark</item>   <!-- white -->
+        
+        <!-- Dark theme background -->
+        <item name="android:colorBackground">@color/background_dark</item> <!-- #120f19 -->
+        <item name="colorOnBackground">@color/text_primary_dark</item>     <!-- white -->
+        
+        <!-- Dark theme status and navigation bars -->
+        <item name="android:statusBarColor">@color/status_bar_dark</item>  <!-- #120f19 -->
+        <item name="android:navigationBarColor">@color/navigation_bar_dark</item> <!-- #201d29 -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        
+        <!-- Dark theme specific -->
+        <item name="android:isLightTheme">false</item>
+        <item name="android:windowBackground">@color/background_dark</item>
+    </style>
+
+    <!-- WebView specific theme to prevent theme conflicts -->
+    <style name="Theme.AlexImmer.WebView" parent="Theme.AlexImmer">
+        <!-- Ensure WebView respects the website's own theme system -->
+        <item name="android:forceDarkAllowed">false</item>
+        <!-- Let the website handle its own theming -->
+        <item name="colorSurface">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/background_light</item>
+    </style>
+</resources>

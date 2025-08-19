@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background color layer for light theme (default) -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_light" />
+        </shape>
+    </item>
+    <!-- Topography pattern layer for light theme -->
+    <item>
+        <bitmap
+            android:src="@drawable/topography_light"
+            android:tileMode="repeat"
+            android:alpha="0.6" />
+    </item>
+</layer-list>

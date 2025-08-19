@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom attributes for splash/loading screen colors -->
+    <attr name="colorSplashBackground" format="color" />
+    <attr name="colorSplashText" format="color" />
+</resources>

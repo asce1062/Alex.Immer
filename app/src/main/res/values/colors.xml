@@ -1,11 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#0D4842</color>
-    <color name="colorPrimaryDark">#0C433D</color>
-    <color name="colorAccent">#0D6259</color>
-    <!--<color name="colorPrimary">@android:color/transparent</color>
-    <color name="colorPrimaryDark">@android:color/transparent</color>
-    <color name="colorAccent">@android:color/transparent</color>-->
-    <color name="grey400transparent">#80bdbdbd</color>
-    <color name="orange500transparent">#b4ff8800</color>
+    <!-- Website Color Palette - from tailwind.config.mjs -->
+    <!-- Palette colors -->
+    <color name="palette_50">#8e878c</color>      <!-- tangrey -->
+    <color name="palette_100">#9f94a0</color>     <!-- neutralgrey -->
+    <color name="palette_200">#bbb8bb</color>     <!-- lightgrey -->
+    <color name="palette_300">#dcb8b0</color>     <!-- pink -->
+    <color name="palette_400">#e5cab7</color>     <!-- peach -->
+    <color name="palette_500">#9bb0cd</color>     <!-- blue -->
+    <color name="palette_600">#cad5db</color>     <!-- lightblue -->
+    <color name="palette_700">#120f19</color>     <!-- dark -->
+    <color name="palette_800">#947b82</color>     <!-- bold -->
+    <color name="palette_900">#201d29</color>     <!-- dark secondary -->
+
+    <!-- Light theme colors -->
+    <color name="light_50">#947b82</color>
+    <color name="light_100">#ded9e3</color>
+    <color name="light_200">#c3b8c1</color>
+    <color name="light_300">#635055</color>
+
+    <!-- CSS Variable equivalents -->
+    <color name="tangrey">#8e878c</color>
+    <color name="neutralgrey">#9f94a0</color>
+    <color name="lightgrey">#bbb8bb</color>
+    <color name="pink">#dcb8b0</color>
+    <color name="peach">#e5cab7</color>
+    <color name="blue">#9bb0cd</color>
+    <color name="lightblue">#cad5db</color>
+    <color name="dark">#120f19</color>
+    <color name="bold">#947b82</color>
+
+    <!-- Theme-specific backgrounds (from global.css) -->
+    <!-- Dark theme -->
+    <color name="background_dark">#120f19</color>          <!-- html.dark background -->
+    <color name="text_primary_dark">#FFFFFF</color>        <!-- html.dark text -->
+    <color name="text_secondary_dark">#EEEEEE</color>
+    
+    <!-- Light theme -->
+    <color name="background_light">#e8e5f0</color>         <!-- html:not(.dark) background -->
+    <color name="text_primary_light">#947b82</color>       <!-- html:not(.dark) text -->
+    <color name="text_secondary_light">#635055</color>
+
+    <!-- System UI colors for Android -->
+    <color name="colorPrimary">@color/palette_800</color>          <!-- #947b82 -->
+    <color name="colorPrimaryDark">@color/palette_700</color>      <!-- #120f19 -->
+    <color name="colorAccent">@color/palette_300</color>           <!-- #dcb8b0 -->
+
+    <!-- Material Design colors for compatibility -->
+    <color name="purple_200">@color/palette_300</color>
+    <color name="purple_500">@color/palette_800</color>
+    <color name="purple_700">@color/palette_700</color>
+    <color name="teal_200">@color/palette_500</color>
+    <color name="teal_700">@color/palette_800</color>
+    <color name="black">@color/palette_700</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- WebView and surface colors -->
+    <color name="surface_dark">@color/palette_900</color>          <!-- #201d29 -->
+    <color name="surface_light">@color/light_100</color>           <!-- #ded9e3 -->
+    <color name="on_surface_dark">@color/text_primary_dark</color>
+    <color name="on_surface_light">@color/text_primary_light</color>
+
+    <!-- Status bar and navigation bar colors -->
+    <color name="status_bar_dark">@color/palette_700</color>       <!-- #120f19 -->
+    <color name="status_bar_light">@color/light_100</color>        <!-- #ded9e3 -->
+    <color name="navigation_bar_dark">@color/palette_900</color>   <!-- #201d29 -->
+    <color name="navigation_bar_light">@color/light_100</color>    <!-- #ded9e3 -->
+
+    <!-- Selection colors (matching CSS ::selection) -->
+    <color name="selection_background">@color/blue</color>         <!-- #9bb0cd -->
+    <color name="selection_text">@color/dark</color>               <!-- #120f19 -->
 </resources>

@@ -1,0 +1,35 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark theme for night mode (matching website html.dark) -->
+    <style name="Theme.AlexImmer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand colors (matching website dark theme) -->
+        <item name="colorPrimary">@color/palette_800</item>        <!-- #947b82 -->
+        <item name="colorPrimaryVariant">@color/palette_700</item>  <!-- #120f19 -->
+        <item name="colorOnPrimary">@color/text_primary_dark</item> <!-- white -->
+        
+        <!-- Secondary colors for dark theme -->
+        <item name="colorSecondary">@color/palette_300</item>       <!-- #dcb8b0 -->
+        <item name="colorSecondaryVariant">@color/palette_500</item> <!-- #9bb0cd -->
+        <item name="colorOnSecondary">@color/palette_700</item>     <!-- #120f19 -->
+        
+        <!-- Dark theme surface colors -->
+        <item name="colorSurface">@color/surface_dark</item>        <!-- #201d29 -->
+        <item name="colorOnSurface">@color/on_surface_dark</item>   <!-- white -->
+        
+        <!-- Dark theme background -->
+        <item name="android:colorBackground">@color/background_dark</item> <!-- #120f19 -->
+        <item name="colorOnBackground">@color/text_primary_dark</item>     <!-- white -->
+        
+        <!-- Status and navigation bars for dark theme -->
+        <item name="android:statusBarColor">@color/status_bar_dark</item>  <!-- #120f19 -->
+        <item name="android:navigationBarColor">@color/navigation_bar_dark</item> <!-- #201d29 -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        
+        <!-- Dark theme window background with topography pattern -->
+        <item name="android:windowBackground">@drawable/topography_background</item>
+        
+        <!-- WebView compatibility -->
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:isLightTheme">false</item>
+    </style>
+</resources>

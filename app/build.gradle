@@ -35,6 +35,12 @@ dependencies {
     implementation libs.material
     implementation libs.activity
     implementation libs.constraintlayout
+    
+    // Media support for music playback
+    implementation 'androidx.media:media:1.7.0'
+    // Note: We're using MediaSessionCompat from androidx.media:media for compatibility
+    // Media2 and Media3 are newer but MediaSessionCompat is still widely supported
+    
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

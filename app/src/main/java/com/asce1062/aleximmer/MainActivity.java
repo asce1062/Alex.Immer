@@ -1,13 +1,24 @@
 package com.asce1062.aleximmer;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.os.Bundle;
 import android.os.Environment;
@@ -35,20 +46,56 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MediaSessionService.MediaSessionServiceCallback {
 
     WebView myWeb;
+    
+    // MediaSession Service
+    private MediaSessionService mediaSessionService;
+    private boolean isMediaSessionServiceBound = false;
+    private Handler mainHandler;
+
+    // Theme state management
+    private String currentWebsiteTheme = null;
+    private boolean hasBeenPaused = false; // Track if app has been backgrounded
+    
+    // Audio device disconnect handling
+    private BroadcastReceiver audioDeviceReceiver;
+
+    // Simple test interface to isolate the issue
+    public class SimpleThemeInterface {
+        @JavascriptInterface
+        public void updateTheme(String theme) {
+            Log.d("MainActivity", "🎨 SimpleThemeInterface: Website theme changed to: " + theme);
+            currentWebsiteTheme = theme;
+            runOnUiThread(() -> {
+                boolean isDark = theme.equals("dark");
+                Log.d("MainActivity", "🎨 Updating status bar for theme: " + theme);
+                updateStatusBarForWebsiteTheme(isDark);
+            });
+        }
+
+        @JavascriptInterface
+        public String testMethod() {
+            return "SimpleThemeInterface is working!";
+        }
+    }
 
     // JavaScript Interface for website-to-Android communication
     public class WebAppInterface {
         @JavascriptInterface
         public void updateTheme(String theme) {
-            Log.d("MainActivity", "Website theme changed to: " + theme);
+            Log.d("MainActivity", "🎨 Website manually changed theme to: " + theme);
+
+            // Store the website's chosen theme
+            currentWebsiteTheme = theme;
 
             // Update complete theme (status bar + topography background) on UI thread
             runOnUiThread(() -> {
                 boolean isDark = theme.equals("dark");
+                Log.d("MainActivity", "🎨 Updating status bar for manual theme change - isDark: " + isDark);
                 updateStatusBarForWebsiteTheme(isDark);
+                Log.d("MainActivity", "🎨 Status bar update completed for theme: " + theme);
             });
         }
 
@@ -60,13 +107,19 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void downloadBase64(String base64Data, String fileName) {
             Log.d("MainActivity", "Received base64 download request for: " + fileName);
-            runOnUiThread(() -> saveBase64ToFile(base64Data, fileName, null));
+            runOnUiThread(() -> saveBase64ToFile(base64Data, fileName, null, false));
         }
 
         @JavascriptInterface
         public void downloadBase64WithAlbum(String base64Data, String fileName, String albumName) {
             Log.d("MainActivity", "Received base64 download request for: " + fileName + " (Album: " + albumName + ")");
-            runOnUiThread(() -> saveBase64ToFile(base64Data, fileName, albumName));
+            runOnUiThread(() -> saveBase64ToFile(base64Data, fileName, albumName, false));
+        }
+
+        @JavascriptInterface
+        public void downloadBase64WithAlbumExtras(String base64Data, String fileName, String albumName) {
+            Log.d("MainActivity", "Received base64 download request for extras: " + fileName + " (Album: " + albumName + ")");
+            runOnUiThread(() -> saveBase64ToFile(base64Data, fileName, albumName, true));
         }
 
         @JavascriptInterface
@@ -74,6 +127,97 @@ public class MainActivity extends AppCompatActivity {
             Log.e("MainActivity", "Download error from JavaScript: " + errorMessage);
             runOnUiThread(() -> Toast.makeText(MainActivity.this, "Download failed: " + errorMessage, Toast.LENGTH_SHORT).show());
         }
+
+        // Simplified AndroidBridge - Notification-Only Methods
+
+        @JavascriptInterface
+        public void updateMediaSession(String metadataJson, String playbackStateJson) {
+            Log.d("MainActivity", "AndroidBridge: updateMediaSession called");
+            if (isMediaSessionServiceBound && mediaSessionService != null) {
+                mediaSessionService.updateMediaSession(metadataJson, playbackStateJson);
+            } else {
+                Log.w("MainActivity", "MediaSession service not bound, cannot update MediaSession");
+            }
+        }
+
+        @JavascriptInterface
+        public void setMediaSessionActive(boolean active) {
+            Log.d("MainActivity", "AndroidBridge: setMediaSessionActive called: " + active);
+            if (isMediaSessionServiceBound && mediaSessionService != null) {
+                mediaSessionService.setMediaSessionActive(active);
+            } else {
+                Log.w("MainActivity", "MediaSession service not bound, cannot set active state");
+            }
+        }
+
+        @JavascriptInterface
+        public void clearMediaSession() {
+            Log.d("MainActivity", "AndroidBridge: clearMediaSession called");
+            if (isMediaSessionServiceBound && mediaSessionService != null) {
+                mediaSessionService.clearMediaSession();
+            } else {
+                Log.w("MainActivity", "MediaSession service not bound, cannot clear MediaSession");
+            }
+        }
+
+        @JavascriptInterface
+        public void updatePosition(long positionMs, boolean isPlaying) {
+            Log.d("MainActivity", "AndroidBridge: updatePosition called: " + positionMs + "ms, playing: " + isPlaying);
+            if (isMediaSessionServiceBound && mediaSessionService != null) {
+                mediaSessionService.updatePosition(positionMs, isPlaying);
+            } else {
+                Log.w("MainActivity", "MediaSession service not bound, cannot update position");
+            }
+        }
+
+        @JavascriptInterface
+        public void reportError(String errorJson) {
+            Log.e("MainActivity", "AndroidBridge: Error reported from web: " + errorJson);
+            runOnUiThread(() -> {
+                try {
+                    org.json.JSONObject error = new org.json.JSONObject(errorJson);
+                    String message = error.optString("message", "Unknown error");
+                    Toast.makeText(MainActivity.this, "Notification Error: " + message, Toast.LENGTH_SHORT).show();
+                } catch (org.json.JSONException e) {
+                    Log.e("MainActivity", "Error parsing error JSON", e);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void testBridge() {
+            Log.d("MainActivity", "AndroidBridge: testBridge called - Notification bridge test");
+            runOnUiThread(() -> {
+                Toast.makeText(MainActivity.this, "Notification Bridge ready!", Toast.LENGTH_LONG).show();
+            });
+
+            // Test notification update
+            if (myWeb != null && mainHandler != null) {
+                mainHandler.postDelayed(() -> {
+                    String testScript = "javascript:(function() {" +
+                        "console.log('🔔 Notification bridge test completed successfully');" +
+                        "if (window.androidBridgeService && window.androidBridgeService.testNotificationBridge) {" +
+                            "window.androidBridgeService.testNotificationBridge();" +
+                        "}" +
+                    "})();";
+                    myWeb.loadUrl(testScript);
+                }, 500);
+            }
+        }
+
+        @JavascriptInterface
+        public void onAudioDeviceDisconnected() {
+            Log.d("MainActivity", "WebAppInterface: onAudioDeviceDisconnected called by website");
+            // This method is called by the website when it handles the audio device disconnect
+            // The website can implement this callback to handle the pause logic in a more controlled way
+        }
+
+        @JavascriptInterface
+        public String debugInterface() {
+            Log.d("MainActivity", "WebAppInterface: debugInterface called");
+            return "AndroidInterface methods available: updateTheme, notifyThemeReady, onAudioDeviceDisconnected, debugInterface";
+        }
+
     }
 
     @Override
@@ -97,7 +241,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setupWebView();
+        setupAudioDeviceMonitoring();
         setupBackPressedDispatcher();
+        initializeMediaSessionService();
     }
 
     private void updateStatusBarForWebsiteTheme(boolean isDarkTheme) {
@@ -230,8 +376,25 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setBuiltInZoomControls(false);
         webSettings.setSupportZoom(false);
 
-        // Add JavaScript interface for website-to-Android communication
-        myWeb.addJavascriptInterface(new WebAppInterface(), "AndroidInterface");
+        // Create instances for both bridges
+        SimpleThemeInterface simpleInterface = new SimpleThemeInterface();
+        WebAppInterface webInterface = new WebAppInterface();
+        
+        // Remove any existing interfaces first (in case of reload)
+        try {
+            myWeb.removeJavascriptInterface("AndroidInterface");
+            myWeb.removeJavascriptInterface("AndroidBridge");
+        } catch (Exception e) {
+            // Ignore if interfaces don't exist yet
+        }
+        
+        // Use simple interface for theme functionality with different name
+        myWeb.addJavascriptInterface(simpleInterface, "AndroidThemeInterface");
+        
+        // Add AndroidBridge interface for music functionality  
+        myWeb.addJavascriptInterface(webInterface, "AndroidBridge");
+        
+        Log.d("MainActivity", "JavaScript interfaces registered: AndroidInterface (SimpleThemeInterface) and AndroidBridge");
 
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -316,7 +479,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                // Sync system theme with website and set up listener
+                // Conditionally sync system theme with website (only on cold start) and set up listener
                 if (myWeb != null) {
                     myWeb.postDelayed(() -> syncSystemThemeToWebsite(), 500);
                     myWeb.postDelayed(() -> injectThemeListener(), 1000);
@@ -329,7 +492,121 @@ public class MainActivity extends AppCompatActivity {
         myWeb.loadUrl("https://asce1062.github.io/");
     }
 
+    private void setupAudioDeviceMonitoring() {
+        audioDeviceReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                Log.d("MainActivity", "Audio device broadcast received: " + action);
+
+                boolean shouldPause = false;
+                String deviceType = "unknown";
+
+                if (AudioManager.ACTION_HEADSET_PLUG.equals(action)) {
+                    // Wired headphones/headset disconnect
+                    int state = intent.getIntExtra("state", -1);
+                    if (state == 0) { // 0 = unplugged, 1 = plugged
+                        shouldPause = true;
+                        deviceType = "wired headphones";
+                    }
+                } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                    // Bluetooth device disconnect
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    if (device != null && isBluetoothAudioDevice(device)) {
+                        shouldPause = true;
+                        // Safely get device name with permission check
+                        String deviceName = getBluetoothDeviceName(device);
+                        deviceType = "Bluetooth " + deviceName;
+                    }
+                }
+
+                if (shouldPause) {
+                    Log.d("MainActivity", "Audio device disconnected: " + deviceType + " - Pausing playback");
+                    pauseAudioOnDeviceDisconnect();
+                }
+            }
+        };
+
+        // Register for wired headset events
+        IntentFilter headsetFilter = new IntentFilter(AudioManager.ACTION_HEADSET_PLUG);
+        registerReceiver(audioDeviceReceiver, headsetFilter);
+
+        // Register for Bluetooth device disconnect events
+        IntentFilter bluetoothFilter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        registerReceiver(audioDeviceReceiver, bluetoothFilter);
+
+        Log.d("MainActivity", "Audio device monitoring initialized");
+    }
+
+    private void pauseAudioOnDeviceDisconnect() {
+        if (myWeb != null) {
+            // Send pause command to website
+            String pauseScript = "javascript:(function() {" +
+                "try {" +
+                    "if (window.AndroidInterface && window.AndroidInterface.onAudioDeviceDisconnected) {" +
+                        "window.AndroidInterface.onAudioDeviceDisconnected();" +
+                    "} else {" +
+                        // Fallback: try to find and click pause button or dispatch pause event
+                        "const pauseBtn = document.querySelector('[data-action=\"pause\"], .pause-btn, #pause-btn');" +
+                        "if (pauseBtn && pauseBtn.click) pauseBtn.click();" +
+                        "else {" +
+                            "const event = new CustomEvent('audioDeviceDisconnected', { detail: 'pause' });" +
+                            "document.dispatchEvent(event);" +
+                        "}" +
+                    "}" +
+                    "console.log('Android: Audio device disconnected - pause command sent');" +
+                "} catch(e) {" +
+                    "console.error('Android: Failed to pause on device disconnect:', e);" +
+                "}" +
+            "})();";
+            
+            myWeb.post(() -> myWeb.loadUrl(pauseScript));
+        }
+    }
+
+    private boolean isBluetoothAudioDevice(BluetoothDevice device) {
+        // Check if we have the required permission for accessing device class
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Log.w("MainActivity", "BLUETOOTH_CONNECT permission not granted, assuming audio device for safety");
+            return true; // Assume it's an audio device to be safe
+        }
+        
+        try {
+            // Check if it's an audio device (headphones, speakers, etc.)
+            int deviceClass = device.getBluetoothClass().getMajorDeviceClass();
+            return deviceClass == 1024 || deviceClass == 2304; // Audio/Video devices
+        } catch (SecurityException e) {
+            Log.w("MainActivity", "SecurityException checking Bluetooth device class: " + e.getMessage());
+            return true; // Assume it's an audio device to be safe
+        }
+    }
+
+    private String getBluetoothDeviceName(BluetoothDevice device) {
+        // Check if we have the required permission for accessing device name
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Log.w("MainActivity", "BLUETOOTH_CONNECT permission not granted, using fallback name");
+            return "device";
+        }
+        
+        try {
+            String name = device.getName();
+            return (name != null && !name.isEmpty()) ? name : "device";
+        } catch (SecurityException e) {
+            Log.w("MainActivity", "SecurityException getting Bluetooth device name: " + e.getMessage());
+            return "device";
+        }
+    }
+
     private void syncSystemThemeToWebsite() {
+        // Only sync system theme to website on true cold start (never backgrounded)
+        // Preserve website's chosen theme when resuming from background
+        if (hasBeenPaused || currentWebsiteTheme != null) {
+            Log.d("MainActivity", "Skipping system theme sync - " +
+                  "Has been paused: " + hasBeenPaused + 
+                  ", Website theme: " + currentWebsiteTheme);
+            return;
+        }
+
         // System and website theme sync
         // Update website theme classes without layout modifications
         String themeScript = "javascript:(function() {" +
@@ -359,9 +636,24 @@ public class MainActivity extends AppCompatActivity {
             "function notifyAndroidTheme() {" +
                 "const isDark = document.documentElement.classList.contains('dark');" +
                 "const theme = isDark ? 'dark' : 'light';" +
-                "console.log('Notifying Android of theme change:', theme);" +
-                "if (window.AndroidInterface) {" +
-                    "window.AndroidInterface.updateTheme(theme);" +
+                "console.log('🎨 Notifying Android of theme change:', theme);" +
+                "console.log('🔍 AndroidThemeInterface check:', !!window.AndroidThemeInterface);" +
+                "if (window.AndroidThemeInterface) {" +
+                    "console.log('🔍 updateTheme method type:', typeof window.AndroidThemeInterface.updateTheme);" +
+                    "if (typeof window.AndroidThemeInterface.updateTheme === 'function') {" +
+                        "try {" +
+                            "window.AndroidThemeInterface.updateTheme(theme);" +
+                            "console.log('✅ Theme update call successful');" +
+                        "} catch (e) {" +
+                            "console.error('❌ Error calling updateTheme:', e);" +
+                        "}" +
+                    "} else {" +
+                        "console.error('❌ updateTheme is not a function, type:', typeof window.AndroidThemeInterface.updateTheme);" +
+                        "console.log('Available methods:', Object.keys(window.AndroidThemeInterface));" +
+                    "}" +
+                "} else {" +
+                    "console.error('❌ AndroidThemeInterface not available');" +
+                    "console.log('Available interfaces:', Object.keys(window).filter(key => key.includes('Android')));" +
                 "}" +
             "}" +
 
@@ -388,15 +680,28 @@ public class MainActivity extends AppCompatActivity {
 
             "themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });" +
 
+            // Debug AndroidThemeInterface availability
+            "console.log('🔍 AndroidThemeInterface Debug:');" +
+            "console.log('  - window.AndroidThemeInterface exists:', !!window.AndroidThemeInterface);" +
+            "console.log('  - All Android interfaces:', Object.keys(window).filter(key => key.includes('Android')));" +
+            "if (window.AndroidThemeInterface) {" +
+                "console.log('  - AndroidThemeInterface keys:', Object.keys(window.AndroidThemeInterface));" +
+                "console.log('  - updateTheme type:', typeof window.AndroidThemeInterface.updateTheme);" +
+                "console.log('  - testMethod type:', typeof window.AndroidThemeInterface.testMethod);" +
+                "if (typeof window.AndroidThemeInterface.testMethod === 'function') {" +
+                    "console.log('  - Simple test says:', window.AndroidThemeInterface.testMethod());" +
+                "}" +
+            "}" +
+            
             // Initial notification
             "notifyAndroidTheme();" +
 
             // Let Android know the theme system is ready
-            "if (window.AndroidInterface) {" +
+            "if (window.AndroidInterface && window.AndroidInterface.notifyThemeReady) {" +
                 "window.AndroidInterface.notifyThemeReady();" +
             "}" +
 
-            "console.log('Theme listener setup complete');" +
+            "console.log('🎨 Theme listener setup complete');" +
             "})();";
 
         if (myWeb != null) {
@@ -522,8 +827,7 @@ public class MainActivity extends AppCompatActivity {
                     // Handle ZIP files with intelligent naming. Only treat as ZIP if:
                     // 1. Explicitly ZIP MIME type, OR
                     // 2. Multiple tracks in download context
-                    "const isLikelyZip = object.type === 'application/zip' || " +
-                        "zipGenerationContext.trackCount > 1;" +
+                    "const isLikelyZip = object.type === 'application/zip';" +
                     "if (isLikelyZip) {" +
                         "let zipFilename;" +
                         "if (zipGenerationContext.isAlbum && zipGenerationContext.albumName) {" +
@@ -580,13 +884,16 @@ public class MainActivity extends AppCompatActivity {
                     "const actualFileName = urlToFilename.get(blobUrl) || fallbackFileName;" +
                     "console.log('Found stored blob, using filename:', actualFileName);" +
                     "let albumName = null;" +
+                    "let isExtras = false;" +
                     "if (actualFileName && (actualFileName.includes('.mp3') || actualFileName.includes('.flac') || actualFileName.includes('.wav'))) {" +
                         "for (const trackedUrl of downloadedTracks) {" +
                             "if (trackedUrl.endsWith(actualFileName)) {" +
                                 "const albumMatch = trackedUrl.match(/\\/audio\\/([^/]+)\\//); " +
                                 "if (albumMatch) {" +
                                     "albumName = albumMatch[1];" +
-                                    "console.log('Extracted album name for audio file:', albumName);" +
+                                    "console.log('trackedUrl:', trackedUrl);" +
+                                    "isExtras = trackedUrl.includes('/Extras/');" +
+                                    "console.log('Extracted album name for audio file:', albumName, 'isExtras:', isExtras);" +
                                     "break;" +
                                 "}" +
                             "}" +
@@ -597,25 +904,27 @@ public class MainActivity extends AppCompatActivity {
                     "reader.onload = function() {" +
                         "const base64Data = reader.result.split(',')[1];" +
                         "console.log('Blob converted to base64, size:', base64Data.length);" +
-                        "if (window.AndroidInterface) {" +
-                            "if (albumName) {" +
-                                "window.AndroidInterface.downloadBase64WithAlbum(base64Data, actualFileName, albumName);" +
+                        "if (window.AndroidBridge) {" +
+                            "if (albumName && isExtras) {" +
+                                "window.AndroidBridge.downloadBase64WithAlbumExtras(base64Data, actualFileName, albumName);" +
+                            "} else if (albumName) {" +
+                                "window.AndroidBridge.downloadBase64WithAlbum(base64Data, actualFileName, albumName);" +
                             "} else {" +
-                                "window.AndroidInterface.downloadBase64(base64Data, actualFileName);" +
+                                "window.AndroidBridge.downloadBase64(base64Data, actualFileName);" +
                             "}" +
                         "}" +
                     "};" +
                     "reader.onerror = function() {" +
                         "console.error('FileReader error');" +
-                        "if (window.AndroidInterface) {" +
-                            "window.AndroidInterface.downloadError('FileReader failed');" +
+                        "if (window.AndroidBridge) {" +
+                            "window.AndroidBridge.downloadError('FileReader failed');" +
                         "}" +
                     "};" +
                     "reader.readAsDataURL(blob);" +
                 "} else {" +
                     "console.error('Blob not found in store for URL:', blobUrl);" +
-                    "if (window.AndroidInterface) {" +
-                        "window.AndroidInterface.downloadError('Blob not found in store');" +
+                    "if (window.AndroidBridge) {" +
+                        "window.AndroidBridge.downloadError('Blob not found in store');" +
                     "}" +
                 "}" +
             "};" +
@@ -627,6 +936,7 @@ public class MainActivity extends AppCompatActivity {
             myWeb.loadUrl(blobInterceptorScript);
         }
     }
+    
 
     private void convertBlobToDownload(String blobUrl, String fileName) {
         // Try interceptor first, then fallback to fetch approach
@@ -666,17 +976,17 @@ public class MainActivity extends AppCompatActivity {
                 ".then(dataUrl => {" +
                     "const base64Data = dataUrl.split(',')[1];" +
                     "console.log('Blob converted to base64, size:', base64Data.length);" +
-                    "if (window.AndroidInterface) {" +
-                        "window.AndroidInterface.downloadBase64(base64Data, '" + fileName + "');" +
+                    "if (window.AndroidBridge) {" +
+                        "window.AndroidBridge.downloadBase64(base64Data, '" + fileName + "');" +
                     "} else {" +
-                        "console.error('AndroidInterface not available');" +
+                        "console.error('AndroidBridge not available');" +
                     "}" +
                 "})" +
                 ".catch(error => {" +
                     "clearTimeout(timeoutId);" +
                     "console.error('Error converting blob:', error);" +
-                    "if (window.AndroidInterface) {" +
-                        "window.AndroidInterface.downloadError('Blob conversion failed: ' + error.message);" +
+                    "if (window.AndroidBridge) {" +
+                        "window.AndroidBridge.downloadError('Blob conversion failed: ' + error.message);" +
                     "}" +
                 "});" +
             "})();";
@@ -686,7 +996,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void saveBase64ToFile(String base64Data, String fileName, String albumName) {
+    private void saveBase64ToFile(String base64Data, String fileName, String albumName, boolean isExtras) {
         try {
             // Decode base64 data
             byte[] decodedData = Base64.decode(base64Data, Base64.DEFAULT);
@@ -699,26 +1009,36 @@ public class MainActivity extends AppCompatActivity {
                                 fileName.toLowerCase().endsWith(".flac") ||
                                 fileName.toLowerCase().endsWith(".wav");
 
-            Log.d("MainActivity", "File analysis - isAudioFile: " + isAudioFile + ", albumName: '" + albumName + "', fileName: " + fileName);
+            Log.d("MainActivity", "File analysis - isAudioFile: " + isAudioFile + ", albumName: '" + albumName + "', fileName: " + fileName + ", isExtras: " + isExtras);
 
             if (isAudioFile && albumName != null && !albumName.trim().isEmpty()) {
-                // Save audio files to Music/{AlbumName}/ directory
+                // Save audio files to Music/{AlbumName}/ or Music/{AlbumName}/Extras/ directory
                 File musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
 
                 // Sanitize album name for filesystem
                 String sanitizedAlbumName = albumName.replaceAll("[^a-zA-Z0-9\\s\\-_.]", "_").trim();
-                targetDir = new File(musicDir, sanitizedAlbumName);
+                File albumDir = new File(musicDir, sanitizedAlbumName);
+                
+                if (isExtras) {
+                    // Create extras subdirectory
+                    targetDir = new File(albumDir, "Extras");
+                } else {
+                    // Use album directory directly
+                    targetDir = albumDir;
+                }
 
                 if (!targetDir.exists()) {
                     boolean created = targetDir.mkdirs();
                     if (!created) {
-                        throw new IOException("Failed to create Music/" + sanitizedAlbumName + " directory");
+                        String dirPath = isExtras ? "Music/" + sanitizedAlbumName + "/Extras" : "Music/" + sanitizedAlbumName;
+                        throw new IOException("Failed to create " + dirPath + " directory");
                     }
-                    Log.d("MainActivity", "Created album directory: " + targetDir.getAbsolutePath());
+                    Log.d("MainActivity", "Created directory: " + targetDir.getAbsolutePath());
                 }
 
                 file = new File(targetDir, fileName);
-                Log.d("MainActivity", "Saving audio file to Music album directory: " + file.getAbsolutePath());
+                String dirType = isExtras ? "Music album extras directory" : "Music album directory";
+                Log.d("MainActivity", "Saving audio file to " + dirType + ": " + file.getAbsolutePath());
             } else {
                 // Save non-audio files or files without album info to Downloads
                 targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
@@ -751,7 +1071,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             // Register file with MediaStore for modern Android versions
-            addFileToMediaStore(file, fileName, albumName, isAudioFile);
+            addFileToMediaStore(file, fileName, albumName, isAudioFile, isExtras);
 
         } catch (IOException e) {
             Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -762,7 +1082,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void addFileToMediaStore(File file, String fileName, String albumName, boolean isAudioFile) {
+    private void addFileToMediaStore(File file, String fileName, String albumName, boolean isAudioFile, boolean isExtras) {
         try {
             ContentResolver contentResolver = getContentResolver();
             ContentValues values = new ContentValues();
@@ -786,9 +1106,13 @@ public class MainActivity extends AppCompatActivity {
             values.put(MediaStore.MediaColumns.SIZE, file.length());
 
             if (isAudioFile && albumName != null && !albumName.trim().isEmpty()) {
-                // Registered audio files in Music/{Album}/ directory with MediaStore
+                // Registered audio files in Music/{Album}/ or Music/{Album}/Extras/ directory with MediaStore
                 String sanitizedAlbumName = albumName.replaceAll("[^a-zA-Z0-9\\s\\-_.]", "_").trim();
-                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MUSIC + "/" + sanitizedAlbumName);
+                String relativePath = Environment.DIRECTORY_MUSIC + "/" + sanitizedAlbumName;
+                if (isExtras) {
+                    relativePath += "/Extras";
+                }
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath);
                 values.put(MediaStore.Audio.Media.IS_DOWNLOAD, 1);
                 values.put(MediaStore.Audio.Media.ALBUM, albumName); // Set album metadata
 
@@ -797,7 +1121,8 @@ public class MainActivity extends AppCompatActivity {
                 // Insert into MediaStore
                 Uri uri = contentResolver.insert(collection, values);
                 if (uri != null) {
-                    Log.d("MainActivity", "Audio file registered with MediaStore: " + uri);
+                    String dirType = isExtras ? "extras" : "album";
+                    Log.d("MainActivity", "Audio file registered with MediaStore (" + dirType + "): " + uri);
                 } else {
                     Log.w("MainActivity", "Failed to register audio file with MediaStore");
                 }
@@ -826,13 +1151,28 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // Handle theme changes
-        configureSystemBars();
+        
+        Log.d("MainActivity", "Configuration changed - Has been paused: " + hasBeenPaused +
+              ", Website theme: " + currentWebsiteTheme);
+        
+        // Only apply system theme on true cold start (never backgrounded) - preserve website theme otherwise
+        if (!hasBeenPaused && currentWebsiteTheme == null) {
+            Log.d("MainActivity", "Applying system theme on cold start");
+            configureSystemBars();
+            if (myWeb != null) {
+                // Only sync system theme to website on cold start
+                myWeb.postDelayed(this::syncSystemThemeToWebsite, 100);
+            }
+        } else if (currentWebsiteTheme != null) {
+            Log.d("MainActivity", "Preserving website theme: " + currentWebsiteTheme);
+            // Re-apply the website's chosen theme
+            boolean isDark = currentWebsiteTheme.equals("dark");
+            updateStatusBarForWebsiteTheme(isDark);
+        }
+        
         if (myWeb != null) {
             // Keep WebView background transparent to show topography pattern
             myWeb.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-            // Sync system theme change with website
-            myWeb.postDelayed(this::syncSystemThemeToWebsite, 100);
         }
     }
 
@@ -854,5 +1194,188 @@ public class MainActivity extends AppCompatActivity {
 
         // Add the callback to the OnBackPressedDispatcher
         getOnBackPressedDispatcher().addCallback(this, callback);
+    }
+
+    // MediaSession Service Management
+
+    private void initializeMediaSessionService() {
+        mainHandler = new Handler(Looper.getMainLooper());
+        startMediaSessionService();
+    }
+
+    private void startMediaSessionService() {
+        if (isMediaSessionServiceBound) {
+            Log.d("MainActivity", "MediaSession service already bound, skipping start");
+            return;
+        }
+        
+        Log.d("MainActivity", "Starting and binding MediaSession service");
+        try {
+            Intent serviceIntent = new Intent(this, MediaSessionService.class);
+            
+            // Start the service as foreground service first
+            startForegroundService(serviceIntent);
+            Log.d("MainActivity", "Foreground service started");
+            
+            // Then bind to it
+            boolean bindResult = bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+            Log.d("MainActivity", "Service bind result: " + bindResult);
+            
+            if (!bindResult) {
+                Log.e("MainActivity", "Failed to bind to MediaSession service!");
+            }
+            
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error starting MediaSession service", e);
+        }
+    }
+
+    // Note: We don't stop the MediaSession service anymore - it continues for background playback
+    // The service manages its own lifecycle and stops only when playback is explicitly cleared
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("MainActivity", "MediaSession service connected successfully");
+            try {
+                MediaSessionService.MediaSessionBinder binder = (MediaSessionService.MediaSessionBinder) service;
+                mediaSessionService = binder.getService();
+                mediaSessionService.setCallback(MainActivity.this);
+                mediaSessionService.setWebView(myWeb);
+                isMediaSessionServiceBound = true;
+                
+                Log.d("MainActivity", "MediaSession service bound and callback set");
+                
+                // Notify website that MediaSession bridge is ready
+                if (myWeb != null && mainHandler != null) {
+                    mainHandler.post(() -> {
+                        String bridgeReadyScript = "javascript:(function() {" +
+                            "console.log('🔔 MediaSession AndroidBridge service connected and ready!');" +
+                            
+                            "if (window.onBridgeReady && typeof window.onBridgeReady === 'function') {" +
+                                "console.log('🔔 Calling onBridgeReady');" +
+                                "window.onBridgeReady();" +
+                            "} else {" +
+                                "console.log('🔔 onBridgeReady not found - this is expected for MediaSession bridge');" +
+                            "}" +
+                        "})();";
+                        myWeb.loadUrl(bridgeReadyScript);
+                    });
+                }
+                
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error in onServiceConnected", e);
+                isMediaSessionServiceBound = false;
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d("MainActivity", "MediaSession service disconnected");
+            mediaSessionService = null;
+            isMediaSessionServiceBound = false;
+        }
+    };
+
+    // MediaSessionServiceCallback implementation
+
+    @Override
+    public void onMediaAction(String action) {
+        Log.d("MainActivity", "MediaSession action received: " + action);
+        
+        // Send action to website
+        if (myWeb != null && mainHandler != null) {
+            mainHandler.post(() -> {
+                String actionScript = "";
+                
+                // Handle special app termination action
+                if ("stop_all_playback".equals(action)) {
+                    actionScript = "javascript:(function() {" +
+                        "console.log('🛑 App terminated - stopping all audio playback');" +
+                        // Try multiple ways to stop audio
+                        "try {" +
+                            // Stop all audio elements
+                            "const audioElements = document.querySelectorAll('audio, video');" +
+                            "audioElements.forEach(el => { el.pause(); el.currentTime = 0; });" +
+                            // Dispatch stop event to website
+                            "if (window.onNotificationAction) {" +
+                                "window.onNotificationAction('stop');" +
+                            "}" +
+                            // Also dispatch custom event
+                            "document.dispatchEvent(new CustomEvent('app-terminated', { detail: 'stop_all' }));" +
+                            "console.log('✅ All audio playback stopped for app termination');" +
+                        "} catch(e) {" +
+                            "console.error('❌ Error stopping playback:', e);" +
+                        "}" +
+                    "})();";
+                    myWeb.loadUrl(actionScript);
+                    return;
+                } else if (action.startsWith("seekto:")) {
+                    String positionStr = action.substring(7); // Remove "seekto:" prefix
+                    try {
+                        long positionMs = Long.parseLong(positionStr);
+                        actionScript = "javascript:(function() {" +
+                            "console.log('🔔 MediaSession seek action received: " + positionMs + "ms');" +
+                            "console.log('🔔 Dispatching seek event');" +
+                            "document.dispatchEvent(new CustomEvent('android-notification-action', {" +
+                                "detail: { action: 'seekto', position: " + positionMs + ", timestamp: Date.now() }" +
+                            "}));" +
+                            "console.log('🔔 Seek event dispatched');" +
+                        "})();";
+                        myWeb.loadUrl(actionScript);
+                        return;
+                    } catch (NumberFormatException e) {
+                        Log.e("MainActivity", "Failed to parse seek position: " + positionStr, e);
+                    }
+                }
+                
+                // Handle regular actions - Force document event dispatch for debugging
+                actionScript = "javascript:(function() {" +
+                    "console.log('🔔 MediaSession action received: " + action + "');" +
+                    "console.log('🔔 DEBUGGING: Forcing document event dispatch to bypass window.onNotificationAction');" +
+                    "document.dispatchEvent(new CustomEvent('android-notification-action', {" +
+                        "detail: { action: '" + action + "', timestamp: Date.now() }" +
+                    "}));" +
+                    "console.log('🔔 Document event dispatched for action: " + action + "');" +
+                "})();";
+                myWeb.loadUrl(actionScript);
+            });
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        hasBeenPaused = true;
+        Log.d("MainActivity", "App paused - will no longer be considered cold start");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d("MainActivity", "App resumed - Has been paused: " + hasBeenPaused + 
+              ", Website theme: " + currentWebsiteTheme);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        
+        // Unregister audio device receiver to prevent memory leaks
+        if (audioDeviceReceiver != null) {
+            try {
+                unregisterReceiver(audioDeviceReceiver);
+                Log.d("MainActivity", "Audio device receiver unregistered");
+            } catch (IllegalArgumentException e) {
+                Log.w("MainActivity", "Audio device receiver was not registered");
+            }
+        }
+        
+        // Only unbind from service, don't stop it - let it continue for background playback
+        if (isMediaSessionServiceBound) {
+            unbindService(serviceConnection);
+            isMediaSessionServiceBound = false;
+        }
+        Log.d("MainActivity", "MainActivity destroyed - service continues for background playback");
     }
 }
